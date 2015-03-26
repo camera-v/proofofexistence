@@ -1,0 +1,5 @@
+ecdsa
+pycrypto
+webapp2==2.5.1
+jinja2
+pyyaml

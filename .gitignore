@@ -30,8 +30,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-/secrets.py
-/secrets.new.py
 
 .settings/
 *.swp
