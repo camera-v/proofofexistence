@@ -2,7 +2,8 @@
 Blockchain.info Python Client for the JSON Merchant API for Google App Engine.
 '''
 
-from google.appengine.api import urlfetch
+#from google.appengine.api import urlfetch
+import urlfetch
 import logging
 import json
 import base64

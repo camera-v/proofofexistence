@@ -3,7 +3,6 @@ import json
 import datetime
 
 from model import Document
-from google.appengine.api import mail
 
 from secrets import ADMIN_EMAIL, DEFAULT_SENDER_EMAIL
 from blockchain import auto_consolidate
@@ -30,7 +29,8 @@ class ConfirmationCron(webapp2.RequestHandler):
 
       subject = "Document certified: %s %s" % (ret['success'], d.digest)
       body = subject + "\n\nmesage: %s" % (ret['message'])
-      mail.send_mail(DEFAULT_SENDER_EMAIL, ADMIN_EMAIL, subject, body)
+      #mail.send_mail(DEFAULT_SENDER_EMAIL, ADMIN_EMAIL, subject, body)
+      # TODO: SEND A MAIL
 
 class PaymentCheckerCron(webapp2.RequestHandler):
   def get(self):

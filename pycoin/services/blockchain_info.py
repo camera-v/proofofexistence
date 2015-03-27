@@ -8,7 +8,8 @@ try:
 except ImportError:
     from urllib.request import urlopen, HTTPError
 
-from google.appengine.api import urlfetch
+#from google.appengine.api import urlfetch
+import urlfetch
 
 from ..tx import TxOut
 

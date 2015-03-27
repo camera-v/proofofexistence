@@ -6,4 +6,5 @@ webob
 webapp2==2.5.1
 jinja2
 pyyaml
-google-api-python-client
+urlfetch
+Paste

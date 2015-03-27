@@ -1,18 +1,18 @@
-import os
-from sys import argv, exit, stdin, stdout, stderr
+import os, sys, signal
+from fabric.api import settings, local
 from secrets import BASE_DIR
 
 MONITOR_DIR = os.path.join(BASE_DIR, ".monitor")
 
 def startDaemon(log_file, pid_file):
-	print "DAEMONIZING PROCESS>>>"
+	print "DAEMONIZING PROCESS>>> (STDIN %d)" % sys.stdin.fileno()
 	try:
 		pid = os.fork()
 		if pid > 0:
-			exit(0)
+			sys.exit(0)
 	except OSError, e:
 		print e.errno
-		exit(1)
+		sys.exit(1)
 		
 	os.chdir("/")
 	os.setsid()
@@ -25,17 +25,17 @@ def startDaemon(log_file, pid_file):
 			f.write(str(pid))
 			f.close()
 			
-			exit(0)
+			sys.exit(0)
 	except OSError, e:
 		print e.errno
-		exit(1)
+		sys.exit(1)
 	
 	si = file('/dev/null', 'r')
 	so = file(log_file, 'a+')
 	se = file(log_file, 'a+', 0)
-	os.dup2(si.fileno(), stdin.fileno())
-	os.dup2(so.fileno(), stdout.fileno())
-	os.dup2(se.fileno(), stderr.fileno())
+	os.dup2(si.fileno(), sys.stdin.fileno())
+	os.dup2(so.fileno(), sys.stdout.fileno())
+	os.dup2(se.fileno(), sys.stderr.fileno())
 
 	print ">>> PROCESS DAEMONIZED"
 
@@ -70,32 +70,52 @@ def stopDaemon(pid_file, extra_pids_port=None):
 
 	return False
 
+class POEException(Exception):
+	def __init__(self, value):
+		self.value = value
+
+	def __str__(self):
+		return repr(self.value)
+
 class ProofOfExistenceApp():
 	def __init__(self):
 		print "new notary instance"
+		self.in_service = False
 
 	def start_app(self):
 		from paste import httpserver		
 
 		startDaemon(os.path.join(MONITOR_DIR, "app.log"), os.path.join(MONITOR_DIR, "app.pid"))
-		httpserver.serve(self.api, host="localhost", port=os.environ('API_PORT', 8080))
+		try:
+			httpserver.serve(self.api, host="localhost", port=os.environ.get('API_PORT', 8700))
+
+		except AttributeError as e:
+			print e, type(e)
 
 	def start(self):
 		print "starting app"
 
+		try:
+			from main import app
+		except Exception as e:
+			print e, type(e)
+			return False
+
 		from multiprocessing import Process
 		from fabric.api import settings, local
-		from main import app as poe_app
 		
 		try:
 			# START API
 			self.api = app
 			p = Process(target=self.start_app)
+			p.start()
 			p.join()
 
 			# START CRON
+			'''
 			with settings(warn_only=True):
-				local("crontab %s" % os.path.join(get_secret('BASE_DIR'), "cron.tab"))
+				local("crontab %s" % os.path.join(BASE_DIR, "cron.tab"))
+			'''
 
 			return True
 
@@ -107,28 +127,27 @@ class ProofOfExistenceApp():
 	def stop(self):
 		print "stopping app"
 		
+		'''
 		with settings(warn_only=True):
 			local("kill -6 $(pgrep -U $(whoami) cron)")
+		'''
 
-		return stopDaemon(os.path.join(MONITOR_DIR), extra_pids_port=os.environ.get('API_PORT', None))
+		return stopDaemon(os.path.join(MONITOR_DIR, "app.pid"), extra_pids_port=os.environ.get('API_PORT', None))
 
 if __name__ == "__main__":
 	usage_prompt = "usage: app.py [start|stop|restart] --base-dir=/path/to/configs/dir"
 
-	if len(argv) < 2:
+	if len(sys.argv) < 2:
 		print usage_prompt
-		exit(-1)
+		sys.exit(-1)
 
 	res = False
 	app = ProofOfExistenceApp()
 
-	if argv[1] in ["restart", "stop"]:
+	if sys.argv[1] in ["restart", "stop"]:
 		res = app.stop()
 
-	if argv[1] in ["restart", "start"]:
+	if sys.argv[1] in ["restart", "start"]:
 		res = app.start()
 
-	if len(argv) > 2:
-		print argv[2:]
-
-	exit(0 if res else -1)
+	sys.exit(0 if res else -1)
