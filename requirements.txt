@@ -1,5 +1,6 @@
 ecdsa
 pycrypto
+fabric
 babel
 webob
 webapp2==2.5.1

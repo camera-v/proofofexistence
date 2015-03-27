@@ -1,6 +1,8 @@
 import os
 from sys import argv, exit, stdin, stdout, stderr
-from secrets import get_secret
+from secrets import BASE_DIR
+
+MONITOR_DIR = os.path.join(BASE_DIR, ".monitor")
 
 def startDaemon(log_file, pid_file):
 	print "DAEMONIZING PROCESS>>>"
@@ -73,31 +75,41 @@ class ProofOfExistenceApp():
 		print "new notary instance"
 
 	def start_app(self):
-		print "starting app"
-
-		from lib.proofofexistence.main import app as poe_app
-		
-
-		MONITOR_DIR = os.path.join(get_secret('BASE_DIR'), ".monitor")
-		self.api = app
+		from paste import httpserver		
 
 		startDaemon(os.path.join(MONITOR_DIR, "app.log"), os.path.join(MONITOR_DIR, "app.pid"))
+		httpserver.serve(self.api, host="localhost", port=os.environ('API_PORT', 8080))
 
 	def start(self):
-		# START APP
+		print "starting app"
+
 		from multiprocessing import Process
+		from fabric.api import settings, local
+		from main import app as poe_app
+		
+		try:
+			# START API
+			self.api = app
+			p = Process(target=self.start_app)
+			p.join()
 
-		p = Process(target=self.start_app)
-		p.join()
+			# START CRON
+			with settings(warn_only=True):
+				local("crontab %s" % os.path.join(get_secret('BASE_DIR'), "cron.tab"))
 
+			return True
 
-		# START CRON
+		except Exception as e:
+			print e, type(e)
+
 		return False
 
 	def stop(self):
 		print "stopping app"
+		
+		with settings(warn_only=True):
+			local("kill -6 $(pgrep -U $(whoami) cron)")
 
-		MONITOR_DIR = os.path.join(get_secret('BASE_DIR'), ".monitor")
 		return stopDaemon(os.path.join(MONITOR_DIR), extra_pids_port=os.environ.get('API_PORT', None))
 
 if __name__ == "__main__":

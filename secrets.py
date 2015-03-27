@@ -7,6 +7,8 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.join(__file__, os.pardir), os.pa
 print BASE_DIR
 
 def get_secret(keys, info=False):
+	print SECRETS
+	
 	if type(keys) in [str, unicode]:
 		keys = [keys]
 	if type(keys) != list:
@@ -22,6 +24,7 @@ def get_secret(keys, info=False):
 	elif len(secrets) == 0:
 		return None
 
+	print "SECRET %s: %s" % (keys, secrets)
 	if not info:
 		return secrets
 
@@ -50,5 +53,8 @@ keys = ["ADMIN_EMAIL", "DEFAULT_SENDER_EMAIL", "SECRET_ADMIN_PATH", "BLOCKCHAIN_
 	"BLOCKCHAIN_PASSWORD_1", "BLOCKCHAIN_PASSWORD_2", "CALLBACK_SECRET", \
 	"BLOCKCHAIN_ENCRYPTED_WALLET", "PAYMENT_PRIVATE_KEY", "PAYMENT_ADDRESS"]
 
-for s in s_keys:
-	locals[s] = get_secret(s)
+lcl = locals()
+for k in keys:
+	lcl[k] = get_secret(k)
+
+print BASE_DIR
