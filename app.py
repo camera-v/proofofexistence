@@ -1,5 +1,6 @@
 import os
 from sys import argv, exit, stdin, stdout, stderr
+from secrets import get_secret
 
 def startDaemon(log_file, pid_file):
 	print "DAEMONIZING PROCESS>>>"
@@ -71,24 +72,33 @@ class ProofOfExistenceApp():
 	def __init__(self):
 		print "new notary instance"
 
-	def get_timestamp_now(self):
-		return None
-
-	def start(self):
+	def start_app(self):
 		print "starting app"
 
+		from lib.proofofexistence.main import app as poe_app
+		
+
+		MONITOR_DIR = os.path.join(get_secret('BASE_DIR'), ".monitor")
+		self.api = app
+
+		startDaemon(os.path.join(MONITOR_DIR, "app.log"), os.path.join(MONITOR_DIR, "app.pid"))
+
+	def start(self):
+		# START APP
 		from multiprocessing import Process
 
-		'''
-		from lib.proofofexistence.main import app as poe_app
-		self.poe_app = poe_app
-		'''
-		
+		p = Process(target=self.start_app)
+		p.join()
+
+
+		# START CRON
 		return False
 
 	def stop(self):
 		print "stopping app"
-		return False
+
+		MONITOR_DIR = os.path.join(get_secret('BASE_DIR'), ".monitor")
+		return stopDaemon(os.path.join(MONITOR_DIR), extra_pids_port=os.environ.get('API_PORT', None))
 
 if __name__ == "__main__":
 	usage_prompt = "usage: app.py [start|stop|restart] --base-dir=/path/to/configs/dir"
