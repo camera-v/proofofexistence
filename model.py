@@ -1,21 +1,18 @@
-import datetime, rom
-
+from google.appengine.ext import db
 from pycoin.encoding import hash160_sec_to_bitcoin_address
 from blockchain import new_address, publish_data, archive_address, address_balance
-
+import datetime
 from time import sleep
 from config import MIN_SATOSHIS_PAYMENT
 
-class LatestBlockchainDocuments(rom.Model):
+class LatestBlockchainDocuments(db.Model):
   """Helper table for latest confirmed documents retrieval"""
-  # XXX
   digests = db.StringListProperty()
   
   def add_document(self, digest):
     self.digests = [digest] + self.digests[:-1]
     self.put()
   
-  # XXX
   @classmethod
   def get_inst(cls):
     inst = cls.all().get()
@@ -24,9 +21,8 @@ class LatestBlockchainDocuments(rom.Model):
       inst.put()
     return inst
 
-class Document(rom.Model):
+class Document(db.Model):
   """Models a proof of document existence at a certain time"""
-  # XXX
   digest = db.StringProperty()
   pending = db.BooleanProperty()
   tx = db.StringProperty()
@@ -139,5 +135,4 @@ class Document(rom.Model):
       LatestBlockchainDocuments.get_inst().add_document(self.digest)
       self.put()
     return {"success" : txid is not None, "tx" : txid, "message" : message}
-
 
