@@ -1,5 +1,9 @@
 ecdsa
 pycrypto
+babel
+webob
 webapp2==2.5.1
 jinja2
 pyyaml
+redis
+rom
