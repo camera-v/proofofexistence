@@ -129,7 +129,7 @@ class ProofOfExistenceApp():
 		
 		'''
 		with settings(warn_only=True):
-			local("kill -6 $(pgrep -U $(whoami) cron)")
+			local("crontab -r")
 		'''
 
 		return stopDaemon(os.path.join(MONITOR_DIR, "app.pid"), extra_pids_port=os.environ.get('API_PORT', None))

@@ -7,7 +7,7 @@ def get_preferred_locale(request):
 	preferred_locale = "en_US"
 	if request.get("lang"):
 		preferred_locale = request.get("lang")
-	elif request.cookies.has_key("language"):
+	elif "language" in request.cookies.keys():
 		preferred_locale = request.cookies["language"]
 	elif request.headers.get("accept_language"):
 		preferred_locale = request.headers.get("accept_language")

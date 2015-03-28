@@ -1,4 +1,4 @@
-import webapp2, jinja2, os
+import webapp2, jinja2, os, mimetypes
 import json
 import datetime
 
@@ -32,15 +32,30 @@ class StaticHandler(webapp2.RequestHandler):
       "preferred_locale": preferred_locale,
       "client_side_translations": json.dumps(client_side_translations)
     }
+
     self.response.write(JINJA_ENVIRONMENT.get_template("templates/" + name + '.html').render(values))
   
-  def get(self, _):  
-    name = self.request.path.split("/")[1]
-    try:
-      self.render_template(name)
-    except IOError, e:
-      self.render_template("error")
+  def get(self, _):
+    paths = self.request.path.split("/")
+    name = paths[1]
 
+    if name != "static":
+      try:
+        self.render_template(name)
+      except IOError, e:
+        print "Error: %s" % e
+        self.render_template("error")
+    else:
+      static_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "static", "/".join(paths[2:])))
+      if os.path.exists(static_file):
+
+        try:
+          self.response.headers.add_header('Content-Type', mimetypes.guess_type(static_file)[0])
+          with open(static_file, 'rb') as F:
+            self.response.write(F.read())
+        except IOError, e:
+          print "Error: %s" % e
+          self.render_template("error")
 
 class JsonAPIHandler(webapp2.RequestHandler):
   def post(self):

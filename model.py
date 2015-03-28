@@ -11,6 +11,9 @@ class LatestBlockchainDocuments(rom.Model):
   def add_document(self, digest):
     self.digests = [digest] + self.digests[:-1]
     self.put()
+
+  def put(self):
+    self.save()
   
   @classmethod
   def get_inst(cls):
@@ -53,7 +56,7 @@ class Document(rom.Model):
     if not self.payment_address:
       self.payment_address = new_address(self.digest)
       self.put()
-    d = db.to_dict(self)
+    d = rom.to_dict(self)
     return d
 
   def put(self):
@@ -89,9 +92,11 @@ class Document(rom.Model):
   def get_latest(cls, confirmed=False):
     if confirmed:
       bag = LatestBlockchainDocuments.get_inst()
-      return [cls.get_doc(digest) for digest in bag.digests]
+      #return [cls.get_doc(digest) for digest in bag.digests]
+      return [cls.get_doc(digest) for digest in bag.digests.iter_result()]
     else:
-      return cls.all().order("-timestamp").run(limit=cls.LATEST_N)
+      #return cls.all().order("-timestamp").run(limit=cls.LATEST_N)
+      return cls.query.order_by("-timestamp").limit(0, cls.LATEST_N).all()
 
   @classmethod
   def get_actionable(cls):
