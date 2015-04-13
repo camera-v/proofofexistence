@@ -6,7 +6,7 @@ from config import MIN_SATOSHIS_PAYMENT
 
 class LatestBlockchainDocuments(rom.Model):
   """Helper table for latest confirmed documents retrieval"""
-  digests = rom.ManyToOne('String')  #db.StringListProperty()
+  digests =  rom.ManyToOne('Document') #db.StringListProperty()
   
   def add_document(self, digest):
     self.digests = [digest] + self.digests[:-1]
@@ -14,6 +14,7 @@ class LatestBlockchainDocuments(rom.Model):
 
   def put(self):
     self.save()
+    print self.to_dict()
   
   @classmethod
   def get_inst(cls):
@@ -21,26 +22,32 @@ class LatestBlockchainDocuments(rom.Model):
     inst = cls.all().get()
     if not inst:
     '''
+    print dir(rom)
 
-    inst = cls.query.all().count()
-    if inst == 0:
+    inst = cls.query.order_by("-digests").all()
+    print "QUERY ALL: ", inst
+    
+    if len(inst) == 0:
       inst = cls()
       inst.put()
     return inst
 
 class Document(rom.Model):
+  # TODO: with keygen prop for string indexables
   """Models a proof of document existence at a certain time"""
-  digest = rom.String() #db.StringProperty()
-  pending = rom.Boolean() #db.BooleanProperty()
-  tx = rom.String() #db.StringProperty()
-  payment_address = rom.String()  #db.StringProperty()
+  digests = rom.OneToMany('LatestBlockchainDocuments', 'no action', 'digests')
+
+  digest = rom.String(index=True) #db.StringProperty()
+  pending = rom.Boolean(index=True) #db.BooleanProperty()
+  tx = rom.String(index=True) #db.StringProperty()
+  payment_address = rom.String(index=True)  #db.StringProperty()
 
   timestamp = rom.DateTime(default=datetime.datetime.now())  #db.DateTimeProperty(auto_now_add=True)
   txstamp = rom.DateTime()  #db.DateTimeProperty()
   blockstamp = rom.DateTime() #db.DateTimeProperty()
   
   legacy = rom.Boolean()  #db.BooleanProperty()
-  archived= rom.Boolean() #db.DateTimeProperty()
+  archived= rom.Boolean(index=True) #db.DateTimeProperty()
 
   def received_payment(self):
     self.pending = False
@@ -52,7 +59,7 @@ class Document(rom.Model):
   def is_actionable(self):
     return self.payment_received() and self.tx == ''
 
-  def to_dict(self):
+  def to_dict(self):    
     if not self.payment_address:
       self.payment_address = new_address(self.digest)
       self.put()
@@ -61,6 +68,7 @@ class Document(rom.Model):
 
   def put(self):
     self.save()
+    print self.to_dict()
 
   def has_balance(self):
     balance = address_balance(self.payment_address)
@@ -92,11 +100,21 @@ class Document(rom.Model):
   def get_latest(cls, confirmed=False):
     if confirmed:
       bag = LatestBlockchainDocuments.get_inst()
+      print bag.to_dict()
       #return [cls.get_doc(digest) for digest in bag.digests]
-      return [cls.get_doc(digest) for digest in bag.digests.iter_result()]
+      try:
+        return [cls.get_doc(digest) for digest in bag.digests.iter_result()]
+      except Exception as e:
+        print e, type(e)
+
     else:
       #return cls.all().order("-timestamp").run(limit=cls.LATEST_N)
-      return cls.query.order_by("-timestamp").limit(0, cls.LATEST_N).all()
+      try:
+        return cls.query.order_by("-timestamp").limit(0, cls.LATEST_N).all()
+      except Exception as e:
+        print e, type(e)
+
+    return []
 
   @classmethod
   def get_actionable(cls):

@@ -20,8 +20,11 @@ from secrets import BLOCKCHAIN_WALLET_GUID, BLOCKCHAIN_PASSWORD_1, BLOCKCHAIN_PA
 from Crypto.Protocol.KDF import PBKDF2
 import io
 import binascii
+import os
 from pycoin.tx.UnsignedTx import UnsignedTxOut
 from pycoin.serialize import b2h
+
+from config import DEFAULT_API_PORT
 
 TX_FEES = 10000
 BLOCKCHAIN_DUST = 5430
@@ -35,6 +38,14 @@ class Mock():
 def mock(url):
   print url
   return Mock()
+
+def debug_http_output(req):
+  print dir(req)
+  for a in ['reason', 'status', 'status_code', 'text', 'content', 'msg', 'headers']:
+    try:
+      print "%s: %s" % (a, str(getattr(req, a)))
+    except Exception as e:
+      print e, type(e), a
 
 # uncomment to debug
 # urlfetch.fetch = mock
@@ -51,15 +62,20 @@ BASE_BLOCKCHAIN_URL = 'https://blockchain.info'
 def get_base_blockchain_url(command):
   url = BASE_BLOCKCHAIN_URL
   url += '/merchant/%s/%s?password=%s' % (BLOCKCHAIN_WALLET_GUID, command, BLOCKCHAIN_PASSWORD_1)
-  if len(BLOCKCHAIN_PASSWORD_2) > 0:
+  if BLOCKCHAIN_PASSWORD_2 is not None and len(BLOCKCHAIN_PASSWORD_2) > 0:
     url += '&second_password=%s' % (BLOCKCHAIN_PASSWORD_2)
+
+  print url
   return url
 
 def new_address(label=None):
   url = get_base_blockchain_url('new_address')
   if label:
     url += '&label='+str(label)
+  
   result = urlfetch.fetch(url)
+  debug_http_output(result)
+
   if result.status_code == 200:
     j = json.loads(result.content)
     if not j.get('address'):
@@ -73,7 +89,10 @@ def new_address(label=None):
 def archive_address(address):
   url = get_base_blockchain_url('archive_address')
   url += '&address=%s' % address
+  
   result = urlfetch.fetch(url)
+  debug_http_output(result)
+
   if result.status_code == 200:
     return json.loads(result.content)
   else:
@@ -83,7 +102,10 @@ def archive_address(address):
 def auto_consolidate(days=10):
   url = get_base_blockchain_url('auto_consolidate')
   url += '&days=%s' % days
+
   result = urlfetch.fetch(url)
+  debug_http_output(result)
+  
   if result.status_code == 200:
     return json.loads(result.content)
   else:
@@ -92,7 +114,10 @@ def auto_consolidate(days=10):
 
 def address_balance(addr):
   url = BASE_BLOCKCHAIN_URL + '/address/%s?format=json&limit=0' % addr
+  
   result = urlfetch.fetch(url)
+  debug_http_output(result)
+
   if result.status_code == 200:
     return json.loads(result.content)['final_balance']
   else:
@@ -104,7 +129,10 @@ def payment(to, satoshis, _from=None):
   url += '&to=%s&amount=%s&shared=%s&fee=%s' % (to, int(satoshis), 'false', TX_FEES)
   if _from:
     url += '&from=%s' % (_from)
+
   result = urlfetch.fetch(url)
+  debug_http_output(result)
+
   if result.status_code == 200:
     return json.loads(result.content).get('tx_hash')
   else:
@@ -113,9 +141,11 @@ def payment(to, satoshis, _from=None):
 
 
 def do_check_document(d):
-  # FIXME: don't do this plz!!
-  url = 'http://www.proofofexistence.com/api/check?d=%s' % (d)
+  url = 'http://localhost:%d/api/check?d=%s' % (os.environ.get('API_PORT', DEFAULT_API_PORT), d)
+  
   result = urlfetch.fetch(url)
+  debug_http_output(result)
+
   if result.status_code == 200:
     j = json.loads(result.content)
     return j['success']

@@ -8,3 +8,5 @@ jinja2
 pyyaml
 urlfetch
 Paste
+redis
+rom

@@ -13,6 +13,9 @@ def get_secret(keys, info=False):
 	secrets = []
 	for k in keys:
 		if k in SECRETS.keys():
+			if k == "SECRET_ADMIN_PATH":
+				SECRETS[k] = os.path.join(os.path.expanduser('~'), SECRETS[k])
+
 			secrets.append(SECRETS[k])
 
 	print "SECRET %s: %s" % (keys, secrets)
@@ -32,7 +35,7 @@ try:
 		for a in argv[2:]:
 			a = a.split("=")
 			if a[0] == "--base-dir":
-				b = os.path.abspath(a[1])
+				b = os.path.expanduser(a[1])
 				if(os.path.exists(os.path.join(b, "poe.config.json"))):
 					BASE_DIR = b
 					break

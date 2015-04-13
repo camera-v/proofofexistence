@@ -40,6 +40,7 @@ def startDaemon(log_file, pid_file):
 	print ">>> PROCESS DAEMONIZED"
 
 def stopDaemon(pid_file, extra_pids_port=None):
+	from subprocess import Popen, PIPE
 	pid = False
 	try:
 		f = open(pid_file, 'r')
@@ -56,7 +57,7 @@ def stopDaemon(pid_file, extra_pids_port=None):
 			os.kill(pid, signal.SIGTERM)
 			
 			if extra_pids_port is not None:
-				pids = Popen(['lsof', '-t', '-i:%d' % extra_pids_port], stdout=PIPE)
+				pids = Popen(['lsof', '-t', '-i:%d' % int(extra_pids_port)], stdout=PIPE)
 				pid = pids.stdout.read().strip()
 				pids.stdout.close()
 				
@@ -83,10 +84,14 @@ class ProofOfExistenceApp():
 		self.in_service = False
 
 	def start_app(self):
-		from paste import httpserver		
+		import redis
+		from rom import util
+		from paste import httpserver
 
 		startDaemon(os.path.join(MONITOR_DIR, "app.log"), os.path.join(MONITOR_DIR, "app.pid"))
+
 		try:
+			util.CONNECTION = redis.Redis(host="localhost", db=0)
 			httpserver.serve(self.api, host="localhost", port=os.environ.get('API_PORT', 8700))
 
 		except AttributeError as e:
