@@ -4,6 +4,7 @@ Blockchain.info Python Client for the JSON Merchant API for Google App Engine.
 
 #from google.appengine.api import urlfetch
 import urlfetch
+import requests
 import logging
 import json
 import base64
@@ -40,8 +41,7 @@ def mock(url):
   return Mock()
 
 def debug_http_output(req):
-  print dir(req)
-  for a in ['reason', 'status', 'status_code', 'text', 'content', 'msg', 'headers']:
+  for a in ['reason', 'status_code', 'content', 'text', 'cookies', 'headers', 'url']:
     try:
       print "%s: %s" % (a, str(getattr(req, a)))
     except Exception as e:
@@ -68,29 +68,56 @@ def get_base_blockchain_url(command):
   print url
   return url
 
+def make_blockchain_request(command, data=None):
+    url = BASE_BLOCKCHAIN_URL
+    url += '/merchant/%s/%s' % (BLOCKCHAIN_WALLET_GUID, command)
+
+    if data is None:
+      data = {}
+
+    data['password'] = BLOCKCHAIN_PASSWORD_1
+
+    if BLOCKCHAIN_PASSWORD_2 is not None and len(BLOCKCHAIN_PASSWORD_2) > 0:
+      data['second_password'] = BLOCKCHAIN_PASSWORD_2
+
+    try:
+      return requests.post(url, data=data)
+    except Exception as e:
+      print e, type(e)
+
+    return None
+
 def new_address(label=None):
+  '''
   url = get_base_blockchain_url('new_address')
   if label:
     url += '&label='+str(label)
   
   result = urlfetch.fetch(url)
+  '''
+  result = make_blockchain_request("new_address", data=None if label else {'label' : str(label)})
   debug_http_output(result)
 
   if result.status_code == 200:
     j = json.loads(result.content)
-    if not j.get('address'):
-        logging.error(result.content)
-    return j['address']
+
+    if j.get('address'):
+      return j['address']
+
+    logging.error(result.content)
   else:
     logging.error('There was an error contacting the Blockchain.info API')
-    return None
-
+  
+  return None
 
 def archive_address(address):
+  '''
   url = get_base_blockchain_url('archive_address')
   url += '&address=%s' % address
   
   result = urlfetch.fetch(url)
+  '''
+  result = make_blockchain_request("archive_address")
   debug_http_output(result)
 
   if result.status_code == 200:
@@ -100,10 +127,13 @@ def archive_address(address):
     return None
 
 def auto_consolidate(days=10):
+  '''
   url = get_base_blockchain_url('auto_consolidate')
   url += '&days=%s' % days
 
   result = urlfetch.fetch(url)
+  '''
+  result = make_blockchain_request('auto_consolidate', data={'days' : days})
   debug_http_output(result)
   
   if result.status_code == 200:

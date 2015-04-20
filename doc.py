@@ -63,6 +63,10 @@ class DocumentGetHandler(JsonAPIHandler):
   def handle(self):
     digest = self.request.get("d")
     doc = Document.get_doc(digest)
+
+    print "DOC FOUND:"
+    print doc
+
     if not doc:
       return {"success" : False, "error": "Document not found"}
     return {"success": True, "doc": doc.to_dict()}

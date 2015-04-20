@@ -21,7 +21,8 @@ $(document).ready(function() {
   var onFail = function() {
     digest.html(translate('Error!'));
     timestamp.html(translate('We couldn\'t find that document'));
-    window.location = 'http://old.proofofexistence.com/detail/'+uuid;
+    //window.location = 'http://old.proofofexistence.com/detail/'+uuid;
+    window.location = window.location.protocol + "//" + window.location.host + "/detail/" + uuid;
   };
 
   var onSuccess = function(data) {

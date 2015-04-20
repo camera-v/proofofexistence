@@ -9,6 +9,9 @@ class LatestBlockchainDocuments(rom.Model):
   digests =  rom.ManyToOne('Document') #db.StringListProperty()
   
   def add_document(self, digest):
+    print dir(digest)
+    print digest.to_dict()
+    
     self.digests = [digest] + self.digests[:-1]
     self.put()
 
@@ -22,8 +25,6 @@ class LatestBlockchainDocuments(rom.Model):
     inst = cls.all().get()
     if not inst:
     '''
-    print dir(rom)
-
     inst = cls.query.order_by("-digests").all()
     print "QUERY ALL: ", inst
     
@@ -63,12 +64,11 @@ class Document(rom.Model):
     if not self.payment_address:
       self.payment_address = new_address(self.digest)
       self.put()
-    d = rom.to_dict(self)
-    return d
+
+    return rom.Model.to_dict(self)
 
   def put(self):
     self.save()
-    print self.to_dict()
 
   def has_balance(self):
     balance = address_balance(self.payment_address)
