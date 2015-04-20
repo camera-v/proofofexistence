@@ -11,7 +11,7 @@ class LatestBlockchainDocuments(rom.Model):
   def add_document(self, digest):
     print dir(digest)
     print digest.to_dict()
-    
+
     self.digests = [digest] + self.digests[:-1]
     self.put()
 
@@ -77,12 +77,14 @@ class Document(rom.Model):
   @classmethod
   def get_doc(cls, digest):
     #return cls.all().filter("digest = ", digest).get()
-    return cls.query.filter(digest=digest).execute()
+    docs = cls.query.filter(digest=digest).execute()
+    return None if len(docs) != 1 else docs[0]
 
   @classmethod
   def get_by_address(cls, address):
     #return cls.all().filter('payment_address = ', address).get()
-    return cls.query.filter(payment_address=address).execute()
+    docs = cls.query.filter(payment_address=address).execute()
+    return None if len(docs) != 1 else docs[0]
 
   @classmethod
   def new(cls, digest):
